@@ -1,0 +1,1290 @@
+<!DOCTYPE html>
+<html lang="ms">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistem Pengurusan POP CARD v2</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <style>
+        :root {
+            --color-primary: #21808D;
+            --color-primary-dark: #0049C6;
+            --color-success: #22C55E;
+            --color-warning: #F5D547;
+            --color-danger: #FF5459;
+            --color-text: #13343B;
+            --color-text-secondary: #6B7280;
+            --color-bg: #F9FAFB;
+            --color-white: #FFFFFF;
+            --color-border: #E5E7EB;
+            --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
+            --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.1);
+            --shadow-lg: 0 10px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        [data-color-scheme="dark"] {
+            --color-text: #F3F4F6;
+            --color-text-secondary: #9CA3AF;
+            --color-bg: #111827;
+            --color-white: #1F2937;
+            --color-border: #374151;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background-color: var(--color-bg);
+            color: var(--color-text);
+            transition: background-color 0.3s;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .sidebar {
+            position: fixed;
+            left: 0;
+            top: 0;
+            width: 250px;
+            height: 100vh;
+            background: linear-gradient(135deg, #21808D 0%, #0049C6 100%);
+            color: white;
+            padding: 20px;
+            z-index: 999;
+            overflow-y: auto;
+            transition: transform 0.3s ease;
+        }
+
+        .sidebar.collapsed {
+            transform: translateX(-100%);
+        }
+
+        .sidebar-header {
+            font-size: 20px;
+            font-weight: 700;
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .nav-item {
+            padding: 12px 15px;
+            margin: 8px 0;
+            cursor: pointer;
+            border-radius: 8px;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 14px;
+        }
+
+        .nav-item:hover {
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .nav-item.active {
+            background: rgba(255, 255, 255, 0.2);
+            font-weight: 600;
+        }
+
+        .main-content {
+            margin-left: 250px;
+            padding: 20px;
+            transition: margin-left 0.3s ease;
+        }
+
+        .main-content.sidebar-collapsed {
+            margin-left: 0;
+        }
+
+        .page {
+            display: none;
+        }
+
+        .page.active {
+            display: block;
+        }
+
+        .page-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+        }
+
+        .page-header h1 {
+            font-size: 32px;
+            font-weight: 700;
+        }
+
+        .page-header-actions {
+            display: flex;
+            gap: 10px;
+        }
+
+        .btn {
+            padding: 10px 16px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            transition: all 0.3s;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .btn-primary {
+            background: var(--color-primary);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #1a6475;
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-md);
+        }
+
+        .btn-secondary {
+            background: var(--color-bg);
+            color: var(--color-text);
+            border: 1px solid var(--color-border);
+        }
+
+        .btn-secondary:hover {
+            background: var(--color-border);
+        }
+
+        .btn-danger {
+            background: var(--color-danger);
+            color: white;
+        }
+
+        .btn-small {
+            padding: 6px 12px;
+            font-size: 12px;
+        }
+
+        .toggle-btn {
+            background: none;
+            border: none;
+            font-size: 24px;
+            cursor: pointer;
+            color: var(--color-text);
+            padding: 8px;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .stat-card {
+            background: var(--color-white);
+            padding: 20px;
+            border-radius: 12px;
+            border: 1px solid var(--color-border);
+            box-shadow: var(--shadow-sm);
+            transition: all 0.3s;
+        }
+
+        .stat-card:hover {
+            box-shadow: var(--shadow-md);
+            transform: translateY(-2px);
+        }
+
+        .stat-label {
+            font-size: 12px;
+            color: var(--color-text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 8px;
+        }
+
+        .stat-value {
+            font-size: 36px;
+            font-weight: 700;
+            color: var(--color-primary);
+        }
+
+        .stat-subtitle {
+            font-size: 12px;
+            color: var(--color-text-secondary);
+            margin-top: 8px;
+        }
+
+        .charts-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .chart-card {
+            background: var(--color-white);
+            padding: 20px;
+            border-radius: 12px;
+            border: 1px solid var(--color-border);
+            box-shadow: var(--shadow-sm);
+        }
+
+        .chart-card h3 {
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 15px;
+        }
+
+        .chart-container {
+            position: relative;
+            height: 300px;
+        }
+
+        .filter-section {
+            background: var(--color-white);
+            padding: 20px;
+            border-radius: 12px;
+            border: 1px solid var(--color-border);
+            margin-bottom: 20px;
+            box-shadow: var(--shadow-sm);
+        }
+
+        .filter-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 15px;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .form-label {
+            font-size: 13px;
+            font-weight: 500;
+            margin-bottom: 6px;
+        }
+
+        .form-input,
+        .form-select {
+            padding: 8px 12px;
+            border: 1px solid var(--color-border);
+            border-radius: 6px;
+            font-size: 14px;
+            font-family: inherit;
+            background: var(--color-white);
+            color: var(--color-text);
+            transition: border-color 0.3s;
+        }
+
+        .form-input:focus,
+        .form-select:focus {
+            outline: none;
+            border-color: var(--color-primary);
+            box-shadow: 0 0 0 3px rgba(33, 128, 141, 0.1);
+        }
+
+        .table-container {
+            background: var(--color-white);
+            border-radius: 12px;
+            border: 1px solid var(--color-border);
+            overflow: hidden;
+            box-shadow: var(--shadow-sm);
+        }
+
+        .table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .table th {
+            background: var(--color-bg);
+            padding: 12px;
+            text-align: left;
+            font-weight: 600;
+            font-size: 13px;
+            border-bottom: 2px solid var(--color-border);
+            cursor: pointer;
+            user-select: none;
+        }
+
+        .table th:hover {
+            background: var(--color-border);
+        }
+
+        .table td {
+            padding: 12px;
+            border-bottom: 1px solid var(--color-border);
+            font-size: 14px;
+        }
+
+        .table tr:hover {
+            background: var(--color-bg);
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 6px;
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .badge-success {
+            background: rgba(34, 197, 94, 0.2);
+            color: var(--color-success);
+        }
+
+        .badge-warning {
+            background: rgba(245, 213, 71, 0.2);
+            color: #F5D547;
+        }
+
+        .badge-danger {
+            background: rgba(255, 84, 89, 0.2);
+            color: var(--color-danger);
+        }
+
+        .pagination {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 20px;
+            padding: 15px 20px;
+            background: var(--color-white);
+            border-radius: 8px;
+        }
+
+        .calendar {
+            background: var(--color-white);
+            border-radius: 12px;
+            border: 1px solid var(--color-border);
+            padding: 20px;
+            box-shadow: var(--shadow-sm);
+        }
+
+        .calendar-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .calendar-grid {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 8px;
+        }
+
+        .calendar-day-header {
+            text-align: center;
+            font-weight: 600;
+            font-size: 12px;
+            padding: 8px;
+            color: var(--color-text-secondary);
+        }
+
+        .calendar-day {
+            aspect-ratio: 1;
+            border: 1px solid var(--color-border);
+            border-radius: 6px;
+            padding: 8px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s;
+            text-align: center;
+            font-size: 12px;
+        }
+
+        .calendar-day:hover {
+            background: var(--color-bg);
+            transform: translateY(-2px);
+        }
+
+        .calendar-day.today {
+            background: var(--color-primary);
+            color: white;
+            font-weight: 600;
+        }
+
+        .tasks-list {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            margin-top: 20px;
+        }
+
+        .task-item {
+            background: var(--color-white);
+            border-left: 4px solid;
+            border-radius: 6px;
+            padding: 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: var(--shadow-sm);
+            border: 1px solid var(--color-border);
+            transition: all 0.3s;
+        }
+
+        .task-item:hover {
+            transform: translateX(4px);
+        }
+
+        .task-item.completed {
+            opacity: 0.6;
+        }
+
+        .task-title {
+            font-weight: 500;
+            margin-bottom: 4px;
+        }
+
+        .task-title.completed {
+            text-decoration: line-through;
+        }
+
+        .task-info {
+            flex: 1;
+        }
+
+        .task-meta {
+            font-size: 12px;
+            color: var(--color-text-secondary);
+            display: flex;
+            gap: 15px;
+            margin-top: 6px;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 2000;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background: var(--color-white);
+            padding: 30px;
+            border-radius: 12px;
+            max-width: 500px;
+            width: 90%;
+            max-height: 90vh;
+            overflow-y: auto;
+            box-shadow: var(--shadow-lg);
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .modal-header h2 {
+            font-size: 20px;
+            font-weight: 600;
+        }
+
+        .modal-close {
+            background: none;
+            border: none;
+            font-size: 24px;
+            cursor: pointer;
+            color: var(--color-text-secondary);
+        }
+
+        .settings-section {
+            background: var(--color-white);
+            padding: 20px;
+            border-radius: 12px;
+            border: 1px solid var(--color-border);
+            margin-bottom: 20px;
+        }
+
+        .settings-section h3 {
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 15px;
+        }
+
+        .color-option {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 10px;
+            border: 1px solid var(--color-border);
+            border-radius: 6px;
+            margin-bottom: 8px;
+        }
+
+        .color-preview {
+            width: 30px;
+            height: 30px;
+            border-radius: 6px;
+        }
+
+        @media print {
+            .sidebar, .toggle-btn, .btn, .filter-section, .page-header-actions {
+                display: none !important;
+            }
+            .main-content {
+                margin-left: 0;
+                padding: 0;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .sidebar {
+                width: 100%;
+            }
+            .main-content {
+                margin-left: 0;
+            }
+            .stats-grid,
+            .charts-grid,
+            .filter-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<!-- SIDEBAR -->
+<div class="sidebar" id="sidebar">
+    <div class="sidebar-header">POP CARD v2.0</div>
+    <div class="nav-item active" onclick="navigateTo('dashboard')">📊 Papan Pemuka</div>
+    <div class="nav-item" onclick="navigateTo('popcard')">📋 Data POP CARD</div>
+    <div class="nav-item" onclick="navigateTo('calendar')">📅 Jejak Bakal Tugas</div>
+    <div class="nav-item" onclick="navigateTo('analytics')">📈 Analitik</div>
+    <div class="nav-item" onclick="navigateTo('settings')">⚙️ Tetapan</div>
+</div>
+
+<!-- MAIN CONTENT -->
+<div class="main-content" id="mainContent">
+    
+    <!-- TOP BAR -->
+    <div class="page-header">
+        <h1 id="pageTitle">Papan Pemuka</h1>
+        <div class="page-header-actions">
+            <button class="toggle-btn" onclick="toggleSidebar()">☰</button>
+            <button class="btn btn-secondary btn-small" onclick="window.print()">🖨️ Print</button>
+            <button class="btn btn-secondary btn-small" onclick="toggleTheme()">🌙</button>
+        </div>
+    </div>
+
+    <!-- DASHBOARD PAGE -->
+    <div class="page active" id="dashboardPage">
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-label">Jumlah Rekod</div>
+                <div class="stat-value" id="totalRecords">0</div>
+                <div class="stat-subtitle">Rekod dalam sistem</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Promosi Aktif</div>
+                <div class="stat-value" id="activePromos">0</div>
+                <div class="stat-subtitle">Promosi sedang berjalan</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Tugas Menunggu</div>
+                <div class="stat-value" id="pendingTasks">0</div>
+                <div class="stat-subtitle">Tugas belum selesai</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Purata/Bulan</div>
+                <div class="stat-value" id="avgPerMonth">0</div>
+                <div class="stat-subtitle">Rekod setiap bulan</div>
+            </div>
+        </div>
+
+        <div class="charts-grid">
+            <div class="chart-card">
+                <h3>📈 Trend Promosi Bulanan</h3>
+                <div class="chart-container">
+                    <canvas id="promoTrendChart"></canvas>
+                </div>
+            </div>
+            <div class="chart-card">
+                <h3>📊 Prestasi Jabatan</h3>
+                <div class="chart-container">
+                    <canvas id="deptPerformanceChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- DATA POP CARD PAGE -->
+    <div class="page" id="popcardPage">
+        <div class="filter-section">
+            <div class="filter-grid">
+                <div class="form-group">
+                    <label class="form-label">Bulan</label>
+                    <select class="form-select" id="filterMonth" onchange="filterData()">
+                        <option value="">Semua Bulan</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Jabatan</label>
+                    <select class="form-select" id="filterDept" onchange="filterData()">
+                        <option value="">Semua Jabatan</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Cawangan</label>
+                    <select class="form-select" id="filterBranch" onchange="filterData()">
+                        <option value="">Semua Cawangan</option>
+                    </select>
+                </div>
+            </div>
+            <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                <button class="btn btn-primary" onclick="filterData()">🔍 Filter</button>
+                <button class="btn btn-secondary" onclick="clearFilters()">✖️ Clear</button>
+                <button class="btn btn-secondary" onclick="exportData()">📥 Export</button>
+                <button class="btn btn-secondary" onclick="toggleSearch()">🔎 Search</button>
+            </div>
+        </div>
+
+        <div id="searchContainer" style="display: none; margin-bottom: 20px;">
+            <input type="text" class="form-input" id="searchInput" placeholder="Cari..." onkeyup="handleSearch()" style="width: 100%;">
+        </div>
+
+        <div class="table-container">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th onclick="sortTable('bulan')">Bulan ↕</th>
+                        <th onclick="sortTable('jabatan')">Jabatan ↕</th>
+                        <th onclick="sortTable('jenisStore')">Jenis Store ↕</th>
+                        <th onclick="sortTable('cawangan')">Cawangan ↕</th>
+                        <th onclick="sortTable('promo')">Promo ↕</th>
+                        <th onclick="sortTable('slash')">Slash ↕</th>
+                        <th onclick="sortTable('cmp')">CMP ↕</th>
+                        <th>Status</th>
+                        <th>Tindakan</th>
+                    </tr>
+                </thead>
+                <tbody id="tableBody"></tbody>
+            </table>
+        </div>
+
+        <div class="pagination">
+            <span>Halaman <span id="currentPage">1</span> dari <span id="totalPages">1</span></span>
+            <div>
+                <button class="btn btn-secondary btn-small" onclick="previousPage()">← Previous</button>
+                <button class="btn btn-secondary btn-small" onclick="nextPage()">Next →</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- CALENDAR PAGE -->
+    <div class="page" id="calendarPage">
+        <div class="calendar">
+            <div class="calendar-header">
+                <button class="btn btn-secondary btn-small" onclick="previousMonth()">← Previous</button>
+                <h3 id="currentMonth">December 2025</h3>
+                <button class="btn btn-secondary btn-small" onclick="nextMonth()">Next →</button>
+            </div>
+            <div class="calendar-grid" id="calendarGrid"></div>
+        </div>
+
+        <h3 style="margin-top: 30px;">📝 Senarai Tugas</h3>
+        <div class="tasks-list" id="tasksList"></div>
+    </div>
+
+    <!-- ANALYTICS PAGE -->
+    <div class="page" id="analyticsPage">
+        <div class="charts-grid">
+            <div class="chart-card">
+                <h3>Tugas Selesai Mengikut Bulan</h3>
+                <div class="chart-container">
+                    <canvas id="tasksCompletedChart"></canvas>
+                </div>
+            </div>
+            <div class="chart-card">
+                <h3>Taburan Tugas Mengikut Warna</h3>
+                <div class="chart-container">
+                    <canvas id="tasksByColorChart"></canvas>
+                </div>
+            </div>
+        </div>
+        <div class="charts-grid">
+            <div class="chart-card">
+                <h3>Prestasi Bulanan POP Card</h3>
+                <div class="chart-container">
+                    <canvas id="monthlyPerformanceChart"></canvas>
+                </div>
+            </div>
+            <div class="chart-card">
+                <h3>Taburan Jenis Kedai</h3>
+                <div class="chart-container">
+                    <canvas id="storeTypeChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- SETTINGS PAGE -->
+    <div class="page" id="settingsPage">
+        <div class="settings-section">
+            <h3>Kustomisasi Label Warna</h3>
+            <div id="colorSettingsContainer"></div>
+        </div>
+
+        <div class="settings-section">
+            <h3>Tetapan Kalendar</h3>
+            <div class="form-group">
+                <label class="form-label">
+                    <input type="checkbox" id="calendarTaskReminder" checked> Reminder Tugas
+                </label>
+            </div>
+        </div>
+
+        <div class="settings-section">
+            <h3>Perihal Sistem</h3>
+            <p>Sistem Pengurusan POP CARD & Jejak Bakal Tugas</p>
+            <p><strong>Versi:</strong> 2.0</p>
+            <p><strong>Dicipta untuk:</strong> Pengurusan operasi runcit yang lebih efisien</p>
+            <button class="btn btn-primary" onclick="exportAllData()">📥 Backup Data</button>
+        </div>
+    </div>
+
+</div>
+
+<!-- TASK MODAL -->
+<div class="modal" id="taskModal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h2>Tambah Tugas</h2>
+            <button class="modal-close" onclick="closeModal()">✕</button>
+        </div>
+        <form onsubmit="addTask(event)">
+            <div class="form-group">
+                <label class="form-label">Tajuk Tugas</label>
+                <input type="text" class="form-input" id="taskTitle" required>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Penerangan</label>
+                <textarea class="form-input" id="taskDescription" rows="3"></textarea>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Warna</label>
+                <select class="form-select" id="taskColor" required></select>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Prioriti</label>
+                <select class="form-select" id="taskPriority" required>
+                    <option value="High">Tinggi</option>
+                    <option value="Medium">Sederhana</option>
+                    <option value="Low">Rendah</option>
+                </select>
+            </div>
+            <div style="display: flex; gap: 10px; margin-top: 20px;">
+                <button type="submit" class="btn btn-primary" style="flex: 1;">Simpan</button>
+                <button type="button" class="btn btn-secondary" onclick="closeModal()" style="flex: 1;">Batal</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+    // ===== GLOBAL STATE =====
+    let allData = [];
+    let filteredData = [];
+    let allTasks = [];
+    let currentPage = 1;
+    const rowsPerPage = 10;
+    let currentCalendarDate = new Date(2025, 11, 1);
+    let sortColumn = '';
+    let sortDirection = 'asc';
+
+    const months = ['JAN', 'FEB', 'MAC', 'APRIL', 'MEI', 'JUN', 'JUL', 'OGO', 'SEP', 'OKT', 'NOV', 'DIS'];
+    const monthsFull = ['Januari', 'Februari', 'Mac', 'April', 'Mei', 'Jun', 'Julai', 'Ogos', 'September', 'Oktober', 'November', 'Disember'];
+    const departments = ['GROCERY', 'FRESH', 'HARDLINE', 'GMS', 'APPAREL'];
+    const branches = ['MELAKA', 'KUALA LUMPUR', 'SELANGOR', 'NEGERI SEMBILAN', 'JOHOR', 'PAHANG', 'TERENGGANU', 'KELANTAN', 'PERLIS', 'KEDAH', 'PENANG', 'PERAK', 'LABUAN', 'PUTRAJAYA', 'SABAH', 'SARAWAK'];
+    const storeTypes = ['HYPER', 'EMPO', 'SUPER', 'MyMydin'];
+
+    const colorSystem = {
+        red: { label: 'Maaf', hex: '#FF5459' },
+        orange: { label: 'Dalam Proses', hex: '#E68161' },
+        yellow: { label: 'Menunggu', hex: '#F5D547' },
+        green: { label: 'Selesai', hex: '#22C55E' },
+        blue: { label: 'Catatan', hex: '#3B82F6' },
+        purple: { label: 'Mesyuarat', hex: '#9333EA' },
+        gray: { label: 'Batal', hex: '#6B7280' },
+        brown: { label: 'Lain-Lain', hex: '#92400E' }
+    };
+
+    // Sample Data
+    const initialData = [
+        { id: 1, bulan: 'JAN', jabatan: 'GROCERY', jenisStore: 'HYPER', promo: '150', slash: '225', cmp: '50', combo: '5', cawangan: 'KUALA LUMPUR', tempoh: '1-31 Jan 2025', status: 'active' },
+        { id: 2, bulan: 'JAN', jabatan: 'FRESH', jenisStore: 'SUPER', promo: '120', slash: '180', cmp: '40', combo: '3', cawangan: 'MELAKA', tempoh: '1-31 Jan 2025', status: 'active' },
+        { id: 3, bulan: 'FEB', jabatan: 'HARDLINE', jenisStore: 'EMPO', promo: '200', slash: '300', cmp: '60', combo: '8', cawangan: 'SELANGOR', tempoh: '1-28 Feb 2025', status: 'pending' },
+        { id: 4, bulan: 'FEB', jabatan: 'GMS', jenisStore: 'MyMydin', promo: '180', slash: '270', cmp: '55', combo: '6', cawangan: 'JOHOR', tempoh: '1-28 Feb 2025', status: 'active' },
+        { id: 5, bulan: 'MAC', jabatan: 'APPAREL', jenisStore: 'HYPER', promo: '160', slash: '240', cmp: '52', combo: '4', cawangan: 'PENANG', tempoh: '1-31 Mac 2025', status: 'active' }
+    ];
+
+    const initialTasks = [
+        { id: 1, date: '2025-12-01', title: 'Serah POP Card G1', description: 'Hantar POP card jabatan grocery ke pusat', color: 'green', priority: 'High', completed: true },
+        { id: 2, date: '2025-12-02', title: 'Update Fresh Stock', description: 'Kemaskini stok bahagian fresh', color: 'orange', priority: 'High', completed: false },
+        { id: 3, date: '2025-12-05', title: 'Laporan HARDLINE', description: 'Siapkan laporan mingguan hardline', color: 'yellow', priority: 'Medium', completed: false },
+        { id: 4, date: '2025-12-10', title: 'Mesyuarat Pengurusan', description: 'Mesyuarat bulanan dengan semua pengurus', color: 'purple', priority: 'High', completed: false }
+    ];
+
+    // Initialize
+    window.addEventListener('load', function() {
+        allData = JSON.parse(JSON.stringify(initialData));
+        allTasks = JSON.parse(JSON.stringify(initialTasks));
+        filteredData = JSON.parse(JSON.stringify(allData));
+
+        populateFilters();
+        populateColorOptions();
+        updateStats();
+        renderTable();
+        renderCalendar();
+        renderTasks();
+        initDashboardCharts();
+        loadTheme();
+    });
+
+    function navigateTo(page) {
+        document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+        document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+        
+        const pageMap = {
+            'dashboard': 'dashboardPage',
+            'popcard': 'popcardPage',
+            'calendar': 'calendarPage',
+            'analytics': 'analyticsPage',
+            'settings': 'settingsPage'
+        };
+
+        const pageTitleMap = {
+            'dashboard': 'Papan Pemuka',
+            'popcard': 'Data POP CARD',
+            'calendar': 'Jejak Bakal Tugas',
+            'analytics': 'Analitik',
+            'settings': 'Tetapan'
+        };
+
+        document.getElementById(pageMap[page]).classList.add('active');
+        event.target.classList.add('active');
+        document.getElementById('pageTitle').textContent = pageTitleMap[page];
+
+        if (page === 'analytics') {
+            setTimeout(() => initAnalyticsCharts(), 100);
+        }
+    }
+
+    function toggleSidebar() {
+        document.getElementById('sidebar').classList.toggle('collapsed');
+        document.getElementById('mainContent').classList.toggle('sidebar-collapsed');
+    }
+
+    function toggleTheme() {
+        const html = document.documentElement;
+        const current = html.getAttribute('data-color-scheme') || 'light';
+        const next = current === 'light' ? 'dark' : 'light';
+        html.setAttribute('data-color-scheme', next);
+        localStorage.setItem('theme', next);
+    }
+
+    function loadTheme() {
+        const theme = localStorage.getItem('theme') || 'light';
+        document.documentElement.setAttribute('data-color-scheme', theme);
+    }
+
+    function populateFilters() {
+        document.getElementById('filterMonth').innerHTML += months.map(m => `<option value="${m}">${m}</option>`).join('');
+        document.getElementById('filterDept').innerHTML += departments.map(d => `<option value="${d}">${d}</option>`).join('');
+        document.getElementById('filterBranch').innerHTML += branches.map(b => `<option value="${b}">${b}</option>`).join('');
+    }
+
+    function populateColorOptions() {
+        const select = document.getElementById('taskColor');
+        Object.keys(colorSystem).forEach(color => {
+            const option = document.createElement('option');
+            option.value = color;
+            option.textContent = colorSystem[color].label;
+            select.appendChild(option);
+        });
+
+        const settingsContainer = document.getElementById('colorSettingsContainer');
+        Object.keys(colorSystem).forEach(color => {
+            const div = document.createElement('div');
+            div.className = 'color-option';
+            div.innerHTML = `
+                <div class="color-preview" style="background-color: ${colorSystem[color].hex};"></div>
+                <span>${colorSystem[color].label}</span>
+            `;
+            settingsContainer.appendChild(div);
+        });
+    }
+
+    function updateStats() {
+        document.getElementById('totalRecords').textContent = allData.length;
+        document.getElementById('activePromos').textContent = allData.filter(d => d.status === 'active').length;
+        document.getElementById('pendingTasks').textContent = allTasks.filter(t => !t.completed).length;
+        const avgPerMonth = allData.length > 0 ? (allData.length / 12).toFixed(1) : 0;
+        document.getElementById('avgPerMonth').textContent = avgPerMonth;
+    }
+
+    function filterData() {
+        const month = document.getElementById('filterMonth').value;
+        const dept = document.getElementById('filterDept').value;
+        const branch = document.getElementById('filterBranch').value;
+
+        filteredData = allData.filter(record => 
+            (!month || record.bulan === month) &&
+            (!dept || record.jabatan === dept) &&
+            (!branch || record.cawangan === branch)
+        );
+
+        currentPage = 1;
+        renderTable();
+    }
+
+    function clearFilters() {
+        document.getElementById('filterMonth').value = '';
+        document.getElementById('filterDept').value = '';
+        document.getElementById('filterBranch').value = '';
+        filteredData = JSON.parse(JSON.stringify(allData));
+        currentPage = 1;
+        renderTable();
+    }
+
+    function toggleSearch() {
+        document.getElementById('searchContainer').style.display = 
+            document.getElementById('searchContainer').style.display === 'none' ? 'block' : 'none';
+    }
+
+    function handleSearch() {
+        const query = document.getElementById('searchInput').value.toLowerCase();
+        filteredData = allData.filter(record =>
+            Object.values(record).some(val => String(val).toLowerCase().includes(query))
+        );
+        currentPage = 1;
+        renderTable();
+    }
+
+    function sortTable(column) {
+        if (sortColumn === column) {
+            sortDirection = sortDirection === 'asc' ? 'desc' : 'asc';
+        } else {
+            sortColumn = column;
+            sortDirection = 'asc';
+        }
+        
+        filteredData.sort((a, b) => {
+            let aVal = a[column];
+            let bVal = b[column];
+            if (!isNaN(aVal)) aVal = Number(aVal);
+            if (!isNaN(bVal)) bVal = Number(bVal);
+            
+            if (aVal < bVal) return sortDirection === 'asc' ? -1 : 1;
+            if (aVal > bVal) return sortDirection === 'asc' ? 1 : -1;
+            return 0;
+        });
+        renderTable();
+    }
+
+    function renderTable() {
+        const tbody = document.getElementById('tableBody');
+        const start = (currentPage - 1) * rowsPerPage;
+        const end = start + rowsPerPage;
+        const paginatedData = filteredData.slice(start, end);
+
+        tbody.innerHTML = paginatedData.map(record => `
+            <tr>
+                <td>${record.bulan}</td>
+                <td>${record.jabatan}</td>
+                <td>${record.jenisStore}</td>
+                <td>${record.cawangan}</td>
+                <td>${record.promo}</td>
+                <td>${record.slash}</td>
+                <td>${record.cmp}</td>
+                <td><span class="badge badge-${record.status === 'active' ? 'success' : 'warning'}">${record.status}</span></td>
+                <td>
+                    <button class="btn btn-secondary btn-small" onclick="editRecord(${record.id})">Edit</button>
+                    <button class="btn btn-danger btn-small" onclick="deleteRecord(${record.id})">Hapus</button>
+                </td>
+            </tr>
+        `).join('');
+
+        document.getElementById('currentPage').textContent = currentPage;
+        document.getElementById('totalPages').textContent = Math.ceil(filteredData.length / rowsPerPage);
+    }
+
+    function nextPage() {
+        if (currentPage * rowsPerPage < filteredData.length) {
+            currentPage++;
+            renderTable();
+        }
+    }
+
+    function previousPage() {
+        if (currentPage > 1) {
+            currentPage--;
+            renderTable();
+        }
+    }
+
+    function deleteRecord(id) {
+        if (confirm('Padam rekod ini?')) {
+            allData = allData.filter(r => r.id !== id);
+            filteredData = filteredData.filter(r => r.id !== id);
+            updateStats();
+            renderTable();
+        }
+    }
+
+    function editRecord(id) {
+        alert('Edit functionality coming soon!');
+    }
+
+    function exportData() {
+        let csv = 'Bulan,Jabatan,Jenis Store,Cawangan,Promo,Slash,CMP,Combo,Status\n';
+        filteredData.forEach(d => {
+            csv += `${d.bulan},${d.jabatan},${d.jenisStore},${d.cawangan},${d.promo},${d.slash},${d.cmp},${d.combo},${d.status}\n`;
+        });
+        const blob = new Blob([csv], { type: 'text/csv' });
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'pop-card-data.csv';
+        a.click();
+    }
+
+    function renderCalendar() {
+        const monthYear = currentCalendarDate.toLocaleDateString('ms-MY', { month: 'long', year: 'numeric' });
+        document.getElementById('currentMonth').textContent = monthYear;
+
+        const grid = document.getElementById('calendarGrid');
+        grid.innerHTML = '';
+
+        const dayHeaders = ['Isn', 'Sel', 'Rab', 'Kha', 'Jum', 'Sab', 'Ahd'];
+        dayHeaders.forEach(day => {
+            const header = document.createElement('div');
+            header.className = 'calendar-day-header';
+            header.textContent = day;
+            grid.appendChild(header);
+        });
+
+        const firstDay = new Date(currentCalendarDate.getFullYear(), currentCalendarDate.getMonth(), 1).getDay();
+        const daysInMonth = new Date(currentCalendarDate.getFullYear(), currentCalendarDate.getMonth() + 1, 0).getDate();
+
+        for (let i = 0; i < firstDay; i++) {
+            grid.appendChild(document.createElement('div'));
+        }
+
+        for (let day = 1; day <= daysInMonth; day++) {
+            const dayCell = document.createElement('div');
+            dayCell.className = 'calendar-day';
+            const isToday = new Date().getDate() === day && new Date().getMonth() === currentCalendarDate.getMonth();
+            if (isToday) dayCell.classList.add('today');
+            dayCell.textContent = day;
+            dayCell.onclick = () => openTaskModal(day);
+            grid.appendChild(dayCell);
+        }
+
+        renderTasks();
+    }
+
+    function previousMonth() {
+        currentCalendarDate.setMonth(currentCalendarDate.getMonth() - 1);
+        renderCalendar();
+    }
+
+    function nextMonth() {
+        currentCalendarDate.setMonth(currentCalendarDate.getMonth() + 1);
+        renderCalendar();
+    }
+
+    function renderTasks() {
+        const tasksList = document.getElementById('tasksList');
+        if (!tasksList) return;
+
+        tasksList.innerHTML = allTasks
+            .filter(t => !t.completed)
+            .slice(0, 10)
+            .map(task => {
+                const color = colorSystem[task.color] || colorSystem.blue;
+                return `
+                    <div class="task-item" style="border-left-color: ${color.hex}">
+                        <div class="task-info">
+                            <div class="task-title">${task.title}</div>
+                            <div class="task-meta">
+                                <span>📅 ${task.date}</span>
+                                <span>⚡ ${task.priority}</span>
+                                <span style="color: ${color.hex};">● ${color.label}</span>
+                            </div>
+                        </div>
+                        <button class="btn btn-secondary btn-small" onclick="completeTask(${task.id})">✓</button>
+                    </div>
+                `;
+            }).join('');
+    }
+
+    function openTaskModal(day) {
+        document.getElementById('taskModal').classList.add('active');
+    }
+
+    function closeModal() {
+        document.getElementById('taskModal').classList.remove('active');
+    }
+
+    function addTask(event) {
+        event.preventDefault();
+        const task = {
+            id: Math.max(...allTasks.map(t => t.id || 0), 0) + 1,
+            date: currentCalendarDate.toISOString().split('T')[0],
+            title: document.getElementById('taskTitle').value,
+            description: document.getElementById('taskDescription').value,
+            color: document.getElementById('taskColor').value,
+            priority: document.getElementById('taskPriority').value,
+            completed: false
+        };
+        allTasks.push(task);
+        closeModal();
+        renderCalendar();
+        updateStats();
+    }
+
+    function completeTask(id) {
+        const task = allTasks.find(t => t.id === id);
+        if (task) task.completed = true;
+        renderTasks();
+        updateStats();
+    }
+
+    let promoTrendChart, deptChart, tasksChart, colorChart, perfChart, storeChart;
+
+    function initDashboardCharts() {
+        const ctx1 = document.getElementById('promoTrendChart');
+        if (ctx1 && !promoTrendChart) {
+            const monthlyData = months.map(m => allData.filter(d => d.bulan === m).reduce((sum, d) => sum + parseInt(d.promo || 0), 0));
+            promoTrendChart = new Chart(ctx1, {
+                type: 'line',
+                data: {
+                    labels: months,
+                    datasets: [{
+                        label: 'Jumlah Promo',
+                        data: monthlyData,
+                        borderColor: '#21808D',
+                        backgroundColor: 'rgba(33, 128, 141, 0.1)',
+                        tension: 0.4,
+                        fill: true
+                    }]
+                },
+                options: { responsive: true, maintainAspectRatio: false }
+            });
+        }
+
+        const ctx2 = document.getElementById('deptPerformanceChart');
+        if (ctx2 && !deptChart) {
+            const deptData = departments.map(d => allData.filter(r => r.jabatan === d).reduce((sum, r) => sum + parseInt(r.promo || 0), 0));
+            deptChart = new Chart(ctx2, {
+                type: 'bar',
+                data: {
+                    labels: departments,
+                    datasets: [{ label: 'Prestasi', data: deptData, backgroundColor: ['#21808D', '#1FB8CD', '#FFC185', '#B4413C', '#ECEBD5'] }]
+                },
+                options: { responsive: true, maintainAspectRatio: false }
+            });
+        }
+    }
+
+    function initAnalyticsCharts() {
+        const ctx1 = document.getElementById('tasksCompletedChart');
+        if (ctx1 && !tasksChart) {
+            tasksChart = new Chart(ctx1, {
+                type: 'line',
+                data: {
+                    labels: monthsFull,
+                    datasets: [{ label: 'Tugas Selesai', data: [5, 8, 12, 10, 15, 13, 18, 20, 16, 14, 19, 7], borderColor: '#22C55E', backgroundColor: 'rgba(34, 197, 94, 0.1)', tension: 0.4, fill: true }]
+                },
+                options: { responsive: true, maintainAspectRatio: false }
+            });
+        }
+
+        const ctx2 = document.getElementById('tasksByColorChart');
+        if (ctx2 && !colorChart) {
+            const colorCounts = {};
+            Object.keys(colorSystem).forEach(c => colorCounts[c] = 0);
+            allTasks.forEach(t => colorCounts[t.color]++);
+            colorChart = new Chart(ctx2, {
+                type: 'doughnut',
+                data: {
+                    labels: Object.keys(colorSystem).map(c => colorSystem[c].label),
+                    datasets: [{ data: Object.values(colorCounts), backgroundColor: Object.keys(colorSystem).map(c => colorSystem[c].hex) }]
+                },
+                options: { responsive: true, maintainAspectRatio: false }
+            });
+        }
+
+        const ctx3 = document.getElementById('monthlyPerformanceChart');
+        if (ctx3 && !perfChart) {
+            perfChart = new Chart(ctx3, {
+                type: 'bar',
+                data: {
+                    labels: months,
+                    datasets: [{ label: 'Prestasi', data: months.map((m, i) => (i + 1) * 150 + Math.random() * 50), backgroundColor: '#21808D' }]
+                },
+                options: { responsive: true, maintainAspectRatio: false }
+            });
+        }
+
+        const ctx4 = document.getElementById('storeTypeChart');
+        if (ctx4 && !storeChart) {
+            const storeCounts = storeTypes.map(s => allData.filter(d => d.jenisStore === s).length);
+            storeChart = new Chart(ctx4, {
+                type: 'pie',
+                data: {
+                    labels: storeTypes,
+                    datasets: [{ data: storeCounts, backgroundColor: ['#21808D', '#1FB8CD', '#FFC185', '#B4413C'] }]
+                },
+                options: { responsive: true, maintainAspectRatio: false }
+            });
+        }
+    }
+
+    function exportAllData() {
+        const data = JSON.stringify({ records: allData, tasks: allTasks }, null, 2);
+        const blob = new Blob([data], { type: 'application/json' });
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'pop-card-backup.json';
+        a.click();
+    }
+</script>
+
+</body>
+</html>
